@@ -7,12 +7,17 @@ import com.github.quiltservertools.blockbot.api.Bot;
 import com.github.quiltservertools.blockbot.api.event.ChatMessageEvent;
 import com.github.quiltservertools.blockbot.api.event.PlayerAdvancementGrantEvent;
 import com.github.quiltservertools.blockbot.api.event.PlayerDeathEvent;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.managers.Presence;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
@@ -23,8 +28,11 @@ import okhttp3.Protocol;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.security.auth.login.LoginException;
-import java.util.Collections;
-import java.util.Objects;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
 import static com.github.quiltservertools.blockbot.BlockBotUtils.getAvatarUrl;
 
@@ -32,6 +40,7 @@ public class BlockBotDiscord implements Bot {
     private WebhookClient webhook;
     private JDA jda;
     private Status status;
+    private final HashMap<UUID, User> linkedUsers = new HashMap<>();
 
     @Override
     public void registerListeners(Config config, MinecraftServer server) throws LoginException {
@@ -103,6 +112,7 @@ public class BlockBotDiscord implements Bot {
     public void onShutdown() {
         jda.shutdown();
         webhook.close();
+        saveLinkedUsers();
     }
 
     @Override
@@ -129,6 +139,39 @@ public class BlockBotDiscord implements Bot {
     public void onAlert(String alert) {
         // BlockBot by default does nothing, may add admin channel functionality later
         // The alert method also remains unused at this time
+    }
+
+    @Override
+    public Map<UUID, User> getLinkedUsers() { return linkedUsers; }
+
+    private void buildLinkedUsers() {
+        Path jsonPath = FabricLoader.getInstance().getConfigDir().resolve("linked_players.json");
+        JsonObject linkedPlayerObject;
+
+        try {
+            linkedPlayerObject = new JsonParser().parse(Files.readString(jsonPath)).getAsJsonObject();
+        } catch (IOException e) {
+            return;
+        }
+
+        linkedPlayerObject.entrySet().forEach(entry -> {
+            UUID playerUUID;
+            try {
+                playerUUID = UUID.fromString(entry.getKey());
+            } catch (IllegalArgumentException e) {
+                return;
+            }
+
+            linkedUsers.put(playerUUID, this.getBot().getUserById(entry.getValue().getAsLong()));
+
+        });
+    }
+
+    private void saveLinkedUsers() {
+        Path jsonPath = FabricLoader.getInstance().getConfigDir().resolve("linked_players.json");
+        try {
+            Files.writeString(jsonPath, new Gson().toJson(linkedUsers));
+        } catch (IOException ignored) {}
     }
 
     private WebhookEmbed buildConnectMessage(ServerPlayerEntity player, boolean joined) {

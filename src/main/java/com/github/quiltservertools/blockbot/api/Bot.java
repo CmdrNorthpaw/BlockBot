@@ -1,6 +1,7 @@
 package com.github.quiltservertools.blockbot.api;
 
 import com.github.quiltservertools.blockbot.Config;
+import net.dv8tion.jda.api.entities.User;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.server.MinecraftServer;
@@ -9,6 +10,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import javax.security.auth.login.LoginException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public interface Bot {
     void registerListeners(Config config, MinecraftServer server) throws LoginException;
@@ -30,4 +35,6 @@ public interface Bot {
     void onPlayerDisconnect(ServerPlayNetworkHandler handler, MinecraftServer server);
 
     void onAlert(String alert);
+
+    Map<UUID, User> getLinkedUsers();
 }
