@@ -27,6 +27,8 @@ public class Config {
     private String commandPrefix;
     private boolean whitelistCommand;
     private boolean skinOverlay;
+    private boolean linkedAccounts;
+    private boolean requireLinkedAccounts;
 
     public Config() {
         JsonObject json;
@@ -63,6 +65,8 @@ public class Config {
         commandPrefix = json.get("command_prefix") == null ? "!" : json.get("command_prefix").getAsString();
         whitelistCommand = json.get("whitelist_command") == null || json.get("whitelist_command").getAsBoolean();
         skinOverlay = json.get("skin_overlay") == null || json.get("skin_overlay").getAsBoolean();
+        linkedAccounts = json.get("linked_accounts") == null || json.get("linked_accounts").getAsBoolean();
+        requireLinkedAccounts = json.get("require_linked_account") == null || json.get("require_linked_account").getAsBoolean();
     }
 
     public String getIdentifier() {
@@ -120,6 +124,10 @@ public class Config {
     public boolean enableSkinOverlay() {
         return skinOverlay;
     }
+
+    public boolean linkedAccountsEnabled() { return linkedAccounts; }
+
+    public boolean linkedAccountsRequired() { return requireLinkedAccounts; }
 
     public void shutdown() {
         JsonObject o = new JsonObject();
