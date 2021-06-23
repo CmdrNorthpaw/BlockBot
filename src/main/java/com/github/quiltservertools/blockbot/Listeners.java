@@ -1,5 +1,6 @@
 package com.github.quiltservertools.blockbot;
 
+import com.github.quiltservertools.blockbot.api.Bot;
 import com.github.quiltservertools.blockbot.command.discord.DiscordCommandOutput;
 import com.github.quiltservertools.blockbot.command.discord.DiscordCommandOutputHelper;
 import net.dv8tion.jda.api.entities.Message;
@@ -16,10 +17,12 @@ import java.util.Objects;
 public class Listeners extends ListenerAdapter {
     private final Config config;
     private final MinecraftServer server;
+    private final Bot bot;
 
-    public Listeners(Config config, MinecraftServer server) {
+    public Listeners(Config config, MinecraftServer server, Bot bot) {
         this.config = config;
         this.server = server;
+        this.bot = bot;
     }
 
     @Override
@@ -68,6 +71,15 @@ public class Listeners extends ListenerAdapter {
             String user = msg.replaceFirst("whitelist add ", "");
             this.server.getCommandManager().execute(this.server.getCommandSource(), "whitelist add " + user);
             message.getChannel().sendMessage("Whitelisted " + user).queue();
+            return true;
+        } else if (msg.startsWith("link")) {
+            int linkID = Integer.parseInt(msg.replace("link ", ""));
+            boolean success = bot.addLink(linkID, message.getAuthor());
+            if (!success) {
+                message.getChannel().sendMessage("Could not link your account because you entered the wrong link ID").queue();
+            } else {
+                message.getChannel().sendMessage("Your account has been linked!").queue();
+            }
             return true;
         }
         return false;
