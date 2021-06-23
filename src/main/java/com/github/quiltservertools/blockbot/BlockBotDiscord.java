@@ -41,6 +41,7 @@ public class BlockBotDiscord implements Bot {
     private JDA jda;
     private Status status;
     private final HashMap<UUID, User> linkedUsers = new HashMap<>();
+    private final HashMap<UUID, Integer> linksInProgress = new HashMap<>();
 
     @Override
     public void registerListeners(Config config, MinecraftServer server) throws LoginException {
@@ -125,6 +126,13 @@ public class BlockBotDiscord implements Bot {
 
     @Override
     public void onPlayerConnect(ServerPlayNetworkHandler handler, PacketSender packetSender, MinecraftServer server) {
+        if (BlockBot.CONFIG.linkedAccountsRequired() && linkedUsers.get(handler.getPlayer().getUuid()) == null) {
+            int linkID = new Random().nextInt(900000000) + 100000000;
+
+            handler.disconnect(Text.of("You must link your Minecraft account to Discord to join this server. Use the command: !link "
+            + linkID));
+        }
+
         webhook.send(buildConnectMessage(handler.getPlayer(), true));
         tickStatus(server);
     }
