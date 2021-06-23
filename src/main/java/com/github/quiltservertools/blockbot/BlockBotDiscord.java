@@ -4,9 +4,6 @@ import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
 import club.minnced.discord.webhook.send.*;
 import com.github.quiltservertools.blockbot.api.Bot;
-import com.github.quiltservertools.blockbot.api.event.ChatMessageEvent;
-import com.github.quiltservertools.blockbot.api.event.PlayerAdvancementGrantEvent;
-import com.github.quiltservertools.blockbot.api.event.PlayerDeathEvent;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -16,7 +13,6 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.managers.Presence;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.server.MinecraftServer;
@@ -29,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -41,12 +36,12 @@ public class BlockBotDiscord implements Bot {
     private JDA jda;
     private Status status;
     private final HashMap<UUID, User> linkedUsers = new HashMap<>();
-    private final HashMap<UUID, Integer> linksInProgress = new HashMap<>();
+    private final HashMap<Integer, UUID> linksInProgress = new HashMap<>();
 
     @Override
     public void registerListeners(Config config, MinecraftServer server) throws LoginException {
         jda = JDABuilder.createDefault(config.getIdentifier()).build();
-        jda.addEventListener(new Listeners(config, server));
+        jda.addEventListener(new Listeners(config, server, this));
         BlockBot.LOG.info("Setup discord bot with token provided");
         // Init webhook
         WebhookClientBuilder builder = new WebhookClientBuilder(config.getWebhook());
@@ -153,8 +148,11 @@ public class BlockBotDiscord implements Bot {
     public Map<UUID, User> getLinkedUsers() { return linkedUsers; }
 
     @Override
-    public void addLink(long discordID, UUID playerID) {
-        linkedUsers.put(playerID, jda.getUserById(discordID));
+    public boolean addLink(int linkId, User discordUser) {
+        UUID playerToLink = linksInProgress.get(linkId);
+        if (playerToLink == null) return false;
+        linkedUsers.put(playerToLink, discordUser);
+        return true;
     }
 
     private void buildLinkedUsers() {

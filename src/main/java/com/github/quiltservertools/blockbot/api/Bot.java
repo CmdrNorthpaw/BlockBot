@@ -38,5 +38,5 @@ public interface Bot {
 
     Map<UUID, User> getLinkedUsers();
 
-    void addLink(long id, UUID playerId);
+    boolean addLink(int linkId, User userToLink);
 }
