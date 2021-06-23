@@ -152,6 +152,11 @@ public class BlockBotDiscord implements Bot {
     @Override
     public Map<UUID, User> getLinkedUsers() { return linkedUsers; }
 
+    @Override
+    public void addLink(long discordID, UUID playerID) {
+        linkedUsers.put(playerID, jda.getUserById(discordID));
+    }
+
     private void buildLinkedUsers() {
         Path jsonPath = FabricLoader.getInstance().getConfigDir().resolve("linked_players.json");
         JsonObject linkedPlayerObject;

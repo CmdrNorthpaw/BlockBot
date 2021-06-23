@@ -37,4 +37,6 @@ public interface Bot {
     void onAlert(String alert);
 
     Map<UUID, User> getLinkedUsers();
+
+    void addLink(long id, UUID playerId);
 }
